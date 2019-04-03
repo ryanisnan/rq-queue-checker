@@ -1,0 +1,16 @@
+version: '3'
+services:
+  redis:
+    container_name: rq-queue-checker-redis
+    image: redis
+  queue_checker:
+    container_name: rq-queue-checker
+    build: src
+    command: python test.py
+    environment:
+      - REDIS_HOST=rq-queue-checker-redis
+      - REDIS_PORT=6379
+      - QUEUE_THRESHOLDS={"high":50,"low":20}
+      - LOGLEVEL=50
+    depends_on:
+      - redis
