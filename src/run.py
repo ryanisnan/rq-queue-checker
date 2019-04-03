@@ -43,7 +43,7 @@ def get_redis_connection(redis_host, redis_port):
     """
     logger.debug('Redis connection info: %s:%s' % (redis_host, redis_port))
 
-    r = redis.Redis(host=redis_host, port=redis_port, db=0)
+    r = redis.Redis(host=redis_host, port=redis_port, db=1)
 
     # Ensure connection to redis is good
     r.ping()
