@@ -1,5 +1,4 @@
 from rq import Queue
-import copy
 import json
 import logging
 import os
@@ -9,16 +8,6 @@ import sys
 import uuid
 
 
-base_logger = logging.getLogger(__name__)
-base_logger.setLevel(int(os.environ.get('LOGLEVEL', logging.DEBUG)))
-
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(int(os.environ.get('LOGLEVEL', logging.DEBUG)))
-
-base_logger.addHandler(handler)
-logger = copy.deepcopy(base_logger)
-
-
 class LoggingTransactionAdapter(logging.LoggerAdapter):
     """
     Add a transaction ID to each log message corresponding this adapter.
@@ -26,12 +15,25 @@ class LoggingTransactionAdapter(logging.LoggerAdapter):
     a unique UUID for monitoring purposes.
     """
     def __init__(self, *args, **kwargs):
-        setattr(self, 'trn_id', str(uuid.uuid4()))
+        self.refresh_trn_id()
         kwargs['extra'] = {}
         super().__init__(*args, **kwargs)
 
     def process(self, msg, kwargs):
         return '[trn: %s] %s' % (getattr(self, 'trn_id'), msg), kwargs
+
+    def refresh_trn_id(self, *args, **kwargs):
+        setattr(self, 'trn_id', str(uuid.uuid4()))
+
+
+base_logger = logging.getLogger(__name__)
+base_logger.setLevel(int(os.environ.get('LOGLEVEL', logging.DEBUG)))
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(int(os.environ.get('LOGLEVEL', logging.DEBUG)))
+
+base_logger.addHandler(handler)
+logger = LoggingTransactionAdapter(base_logger)
 
 
 def get_redis_connection(redis_host, redis_port):
@@ -89,7 +91,7 @@ def send_alert(queue_name, queue_length):
     Send an alert via slack to a specific webhook address notifying users of the
     queue length.
 
-    Returns True if an alert was sent. False if not.
+    Returns True if an alert was sent. R
     """
     SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
 
@@ -97,7 +99,7 @@ def send_alert(queue_name, queue_length):
         logger.warning('SLACK_WEBHOOK_URL was not found in the environment, no alert will be sent.')
         return False
 
-    payload = {'text': '%s queue length alert - %d' % (queue_name, queue_length)}
+    payload = {'text': ':fire::fire::fire: *%s queue length alert - %d* :fire::fire::fire:' % (queue_name, queue_length)}
     requests.post(SLACK_WEBHOOK_URL, json=payload)
 
     logger.debug('slack notification sent for %s' % queue_name)
@@ -112,7 +114,7 @@ def dummy_job():
 
 
 def __main__():
-    logger = LoggingTransactionAdapter(base_logger)
+    logger.refresh_trn_id()
     logger.debug('Running queue checker')
 
     queue_config = get_queue_config(os.environ.get('QUEUE_CONFIG', '{}'))
