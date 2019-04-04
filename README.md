@@ -20,7 +20,7 @@ The container respects the following configuration variables:
 
 - `REDIS_HOST` - Hostname of the redis server
 - `REDIS_PORT` - Port of the redis server
-- `QUEUE_CONFIG` - Stringified JSON object with queue/threshold key/value pairs, e.g. '{"high":1000,"default":2000}'
+- `QUEUE_CONFIG` - Stringified JSON object with queue/threshold key/value pairs, e.g. `{"high":1000,"default":2000}`
 - `SLACK_WEBHOOK_URL` - Webhook for making slack channel posts
 - `LOGLEVEL` - The level of logging output you would like. Default=10 (Debug), corresponds to [python's log levels](https://docs.python.org/3/library/logging.html#logging-levels).
 
