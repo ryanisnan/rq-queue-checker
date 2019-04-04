@@ -79,7 +79,10 @@ def process_queue(queue_name, threshold):
     queue = Queue(queue_name, connection=r)
     length = len(queue)
 
+    logger.debug('Queue %s has a length of %d' % (queue_name, length))
+
     if length >= threshold:
+        logger.debug('Triggering an alert for %s' % queue_name)
         send_alert(queue_name, length)
         return True
 
@@ -102,7 +105,7 @@ def send_alert(queue_name, queue_length):
     payload = {'text': ':fire::fire::fire: *%s queue length alert - %d* :fire::fire::fire:' % (queue_name, queue_length)}
     requests.post(SLACK_WEBHOOK_URL, json=payload)
 
-    logger.debug('slack notification sent for %s' % queue_name)
+    logger.debug('Slack notification sent for %s' % queue_name)
     return True
 
 
