@@ -117,7 +117,7 @@ def send_alert(queue_name, queue_length, alert_type):
     elif alert_type == 'cloudwatch':
         cloudwatch_client = boto3.client('cloudwatch')
         cloudwatch_client.put_metric_data(
-            Namespace="rq_queue_metrics",
+            Namespace="RQMetrics",
             MetricData=[
                 {
                     'MetricName': "queue_length",
