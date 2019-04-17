@@ -120,15 +120,21 @@ def send_alert(queue_name, queue_length, alert_type):
             Namespace="RQMetrics",
             MetricData=[
                 {
-                    'MetricName': "queue_length",
+                    'MetricName': queue_name,
                     "Dimensions": [
                         {
                             "Name": "queue_name",
                             "Value": queue_name
+                        },
+                        {
+                            "Name": "queue_length",
+                            "Value": str(queue_length)
+
                         }
                     ],
                     "Value": float(queue_length),
-                    'Timestamp': datetime.datetime.now()
+                    'Timestamp': datetime.datetime.now(),
+                    'Unit': 'None'
                 }
             ]
         )
