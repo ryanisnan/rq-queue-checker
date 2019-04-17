@@ -6,6 +6,8 @@ import redis
 import requests
 import sys
 import uuid
+import boto3
+import datetime
 
 
 class LoggingTransactionAdapter(logging.LoggerAdapter):
@@ -78,36 +80,15 @@ def process_queue(queue_name, threshold):
 
     queue = Queue(queue_name, connection=r)
     length = len(queue)
-
+    send_alert(queue_name, length, 'cloudwatch')
     logger.debug('Queue %s has a length of %d' % (queue_name, length))
 
     if length >= threshold:
         logger.debug('Triggering an alert for %s' % queue_name)
-        send_alert(queue_name, length)
+        send_alert(queue_name, length, 'slack')
         return True
 
     return False
-
-
-def send_alert(queue_name, queue_length):
-    """
-    Send an alert via slack to a specific webhook address notifying users of the
-    queue length.
-
-    Returns True if an alert was sent. R
-    """
-    SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
-
-    if not SLACK_WEBHOOK_URL:
-        logger.warning('SLACK_WEBHOOK_URL was not found in the environment, no alert will be sent.')
-        return False
-
-    payload = {'text': ':fire::fire::fire: *%s queue length alert - %d* :fire::fire::fire:' % (queue_name, queue_length)}
-    requests.post(SLACK_WEBHOOK_URL, json=payload)
-
-    logger.debug('Slack notification sent for %s' % queue_name)
-    return True
-
 
 def dummy_job():
     """
@@ -115,13 +96,57 @@ def dummy_job():
     """
     pass
 
+def send_alert(queue_name, queue_length, alert_type):
+    """
+    Send an alert via slack to a specific webhook address notifying users of the
+    queue length.
+    Returns True if an alert was sent.
+    """
+    if alert_type == 'slack':
+        SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
+
+        if not SLACK_WEBHOOK_URL:
+            logger.warning('SLACK_WEBHOOK_URL was not found in the environment, no alert will be sent.')
+            return False
+
+        payload = {'text': ':fire::fire::fire: *%s queue length alert - %d* :fire::fire::fire:' % (queue_name, queue_length)}
+        requests.post(SLACK_WEBHOOK_URL, json=payload)
+
+        logger.debug('Slack notification sent for %s' % queue_name)
+        return True
+    elif alert_type == 'cloudwatch':
+        cloudwatch_client = boto3.client('cloudwatch')
+        cloudwatch_client.put_metric_data(
+            Namespace="rq_queue_metrics",
+            MetricData=[
+                {
+                    'MetricName': queue_name,
+                    'Dimensions': [
+                        {
+                            'Name': 'queue_length',
+                            'Value': str(queue_length)
+                        }
+                    ],
+                    'StatisticValues': {
+                        'SampleCount': queue_length,
+                        'Sum': queue_length,
+                        'Minimum': queue_length,
+                        'Maximum': queue_length
+                    },
+                    'Timestamp': datetime.datetime.now()
+                }
+            ]
+        )
+        return True
+    else:
+        return False
+
 
 def __main__():
     logger.refresh_trn_id()
     logger.debug('Running queue checker')
 
     queue_config = get_queue_config(os.environ.get('QUEUE_CONFIG', '{}'))
-
     for queue_name, threshold in queue_config.items():
         process_queue(queue_name, threshold)
 

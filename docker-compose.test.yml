@@ -3,6 +3,8 @@ services:
   redis:
     container_name: rq-queue-checker-redis
     image: redis
+    ports:
+      - "6379:6379"
   queue_checker:
     container_name: rq-queue-checker
     build: src
