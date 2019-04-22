@@ -126,14 +126,8 @@ def send_alert(queue_name, queue_length, alert_type):
                             "Name": "queue_name",
                             "Value": queue_name
                         },
-                        {
-                            "Name": "queue_length",
-                            "Value": str(queue_length)
-                        }
                     ],
                     "Value": float(queue_length),
-                    'Timestamp': datetime.datetime.now(),
-                    'Unit': 'None'
                 }
             ]
         )
