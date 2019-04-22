@@ -127,7 +127,7 @@ def send_alert(queue_name, queue_length, alert_type):
                             "Value": queue_name
                         },
                     ],
-                    "Value": float(queue_length),
+                    "Value": queue_length
                 }
             ]
         )
